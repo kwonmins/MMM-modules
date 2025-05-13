@@ -1,0 +1,6 @@
+{
+  "name": "MMM-ButtonNotifier",
+  "version": "1.0.0",
+  "description": "Displays message when GPIO button is pressed",
+  "main": "MMM-ButtonNotifier.js"
+}
