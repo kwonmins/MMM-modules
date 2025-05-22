@@ -7,25 +7,29 @@ module.exports = NodeHelper.create({
     this.pythonProcess = null;
   },
 
-
-socketNotificationReceived: function (notification, payload) {
-     console.log("받은 감정:", payload);
+  socketNotificationReceived: function (notification) {
     if (notification === "START_EMOTION_ANALYSIS") {
       this.startPythonScript();
     }
   },
-  startPythonScript: function () {
-    const scriptPath = "modules/MMM-Emotion/Emotion.py"; // 실제 경로에 맞게 수정
 
+  startPythonScript: function () {
+ const path = require("path");
+ const scriptPath = path.join(__dirname, "emotion.py");
     this.pythonProcess = spawn("python3", [scriptPath]);
 
     this.pythonProcess.stdout.on("data", (data) => {
-      try {
-        const result = JSON.parse(data.toString());
-        this.sendSocketNotification("EMOTION_RESULT", result);
-      } catch (error) {
-        console.error("[MMM-Emotion] JSON parse error:", error);
-      }
+      const lines = data.toString().split("\n");
+      lines.forEach(line => {
+        if (line.trim().length === 0) return;
+        try {
+          const result = JSON.parse(line.trim());
+          this.sendSocketNotification("EMOTION_RESULT", result);
+        } catch (error) {
+          console.error("[MMM-Emotion] JSON parse error:", error);
+          console.error("⛔️ 원본 데이터:", line);
+        }
+      });
     });
 
     this.pythonProcess.stderr.on("data", (data) => {
@@ -36,7 +40,6 @@ socketNotificationReceived: function (notification, payload) {
       console.log(`[MMM-Emotion] emotion.py exited with code ${code}`);
     });
   },
-    
 
   stop: function () {
     if (this.pythonProcess) {
